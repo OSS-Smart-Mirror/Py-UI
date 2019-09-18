@@ -14,9 +14,9 @@ def get_weather(lat, lng):
 def get_location():
     g = geocoder.ip('me')
     return g.lat, g.lng, g.address
-
-latitude, longitude, address = get_location()
-humidity, temperature, pressure = get_weather(latitude, longitude)
-
-print(latitude, longitude, address)
-print(humidity, temperature, pressure)
+    
+if __name__ == "__main__":
+    latitude, longitude, address = get_location()
+    humidity, temperature, pressure = get_weather(latitude, longitude)
+    print(latitude, longitude, address)
+    print(humidity, temperature, pressure)
