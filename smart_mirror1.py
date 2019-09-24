@@ -14,7 +14,7 @@ from intrinio_sdk.rest import ApiException
 import pyowm
 import geocoder
 import random
-import os.path
+from os import path, environ
 
 #############################################
 
@@ -35,7 +35,7 @@ def get_location():
 
 def get_mails():
     filePath = "/home/team01/Mail/477grp1"
-    if not os.path.isfile(filePath):
+    if not path.isfile(filePath):
         return ["NO MAILS FOUND"]
     else:
         # Returns Sender, Date, Subject of last 5 emails
@@ -66,15 +66,15 @@ def NewsFromBBC():
     else:
         return result
 
-def get_stocks():
-    intrinio_sdk.ApiClient().configuration.api_key['api_key'] = 'API-KEY'
+def get_stonks():
+    intrinio_sdk.ApiClient().configuration.api_key['api_key'] = environ['INTRINIO_API_KEY']
     security_api = intrinio_sdk.SecurityApi()
     identifiers = ['AAPL', 'MSFT', 'GS', 'NKE']
     price_list = list()
     try:
         for identifier in identifiers:
             api_response = security_api.get_security_realtime_price(identifier)
-            price_list.append((identifier, api_response.ask_price))
+            price_list.append((identifier + " " + str(api_response.ask_price)))
     except ApiException as e:
         print("Exception when calling SecurityApi->get_security_realtime_price: %s\r\n" % e)
     finally:
@@ -85,6 +85,24 @@ def getQuote():
     quoteObj = json.loads(r.text)
     return quoteObj
 #############################################
+
+class Stonks(Frame):
+    def __init__(self, master):
+        Frame.__init__(self, master, background="BLACK")
+        self.news = ""
+        self.label_news = Label(self, font="dreams 12", bg="BLACK", fg="WHITE")
+        self.label_news.pack(side=BOTTOM, anchor="n")
+        self.update_stonks()
+
+    def update_stonks(self):
+        x = get_stonks()
+        for i in range(len(x)):
+            temp = x[i]
+            temp1 = '* ' + temp
+            x[i] = temp1
+        string = '\n'.join(x)
+        self.label_news.config(text="--Stonks--\n" + string)
+        self.after(60000, self.update_stonks)
 
 class Mail(Frame):
     def __init__(self, master):
@@ -204,6 +222,9 @@ class Final:
         
         self.mail = Mail(self.bottom)
         self.mail.pack(side=RIGHT)
+        
+        self.stonks = Stonks(self.bottom)
+        self.stonks.pack(side=BOTTOM, fill=BOTH)
         
         quote = ""
         author = ""
