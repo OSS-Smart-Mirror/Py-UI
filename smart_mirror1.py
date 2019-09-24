@@ -14,6 +14,8 @@ from intrinio_sdk.rest import ApiException
 import pyowm
 import geocoder
 import random
+import os.path
+
 #############################################
 
 degree_sign = u'\N{DEGREE SIGN}'
@@ -32,12 +34,21 @@ def get_location():
     return g.lat, g.lng, g.address
 
 def get_mails():
-    # Returns Sender, Date, Subject of last 5 emails
-    regexstr = r'From: (.*) <.*?>\nDate:(.*)\nMessage.*\nSubject: (.*)\n'
-    with open("/var/mail/477grp1", "r") as mail_file:
-        text = mail_file.read()
-    mail_list = re.findall(regexstr, text)
-    return mail_list[-5:]
+    filePath = "/home/team01/Mail/477grp1"
+    if not os.path.isfile(filePath):
+        return ["NO MAILS FOUND"]
+    else:
+        # Returns Sender, Date, Subject of last 5 emails
+        regexstr_sender = r'From: .*<(.*)>'
+        regexstr_subject = r'Subject: (.*)'
+        with open(filePath, "r") as mail_file:
+            text = mail_file.read()
+        senders = re.findall(regexstr_sender, text)
+        subjects = re.findall(regexstr_subject, text)
+        sender_subject = list()
+        for sender, subject in zip(senders, subjects):
+            sender_subject.append(sender + " : " + subject)
+        return sender_subject[-5:]
 
 def NewsFromBBC():
     main_url = " https://newsapi.org/v1/articles?source=bbc-news&sortBy=top&apiKey=4dbc17e007ab436fb66416009dfb59a8"
@@ -74,6 +85,24 @@ def getQuote():
     quoteObj = json.loads(r.text)
     return quoteObj
 #############################################
+
+class Mail(Frame):
+    def __init__(self, master):
+        Frame.__init__(self, master, background="BLACK")
+        self.news = ""
+        self.label_news = Label(self, font="dreams 15", bg="BLACK", fg="WHITE")
+        self.label_news.pack(side=BOTTOM, anchor="n")
+        self.update_mail()
+
+    def update_mail(self):
+        x = get_mails()
+        for i in range(len(x)):
+            temp = x[i]
+            temp1 = '* ' + temp
+            x[i] = temp1
+        string = '\n'.join(x)
+        self.label_news.config(text="--Mail--\n" + string)
+        self.after(300000, self.update_mail)
 
 class News(Frame):
     def __init__(self, master):
@@ -172,7 +201,10 @@ class Final:
 
         self.news = News(self.bottom)
         self.news.pack(side=LEFT)
-
+        
+        self.mail = Mail(self.bottom)
+        self.mail.pack(side=RIGHT)
+        
         quote = ""
         author = ""
         a = getQuote()
