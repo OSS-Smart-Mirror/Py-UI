@@ -2,9 +2,12 @@
 import face_recognition
 import cv2
 import numpy as np
-from serial import Serial
-from time import time
+from serial import Serial, SerialException
+from time import time, sleep
+import slack_send
 #############################################
+
+degree_sign = u'\N{DEGREE SIGN}'
 
 abhay_image_1 = face_recognition.load_image_file("known_users/Abhay.jpg")
 abhay_face_encoding_1 = face_recognition.face_encodings(abhay_image_1)[0]
@@ -103,11 +106,15 @@ if __name__ == "__main__":
     mode = "OFF" # OFF, ON
     while True:
         try:
+            wait = 0
             with Serial('/dev/ttyUSB0', 115200, timeout=15) as ser:
-                _, ir, ldr = (ser.readline().decode("utf-8")).split(',')
+                temperature, ir, ldr = (ser.readline().decode("utf-8")).split(',')
 
                 if mode is "ON":
                     os.system("xrandr --output HDMI-0 --brightness " + str(0.8 + float(ldr) * 0.16))
+
+                if temperature > 35 and temperature < 50:
+                    slack_send.send_message("Temperature exceeding normal levels: " + temperature + ' ' + degree_sign + 'C')
 
                 if (float(ir) < 4.7) and (press is False):
                     press = True
@@ -123,16 +130,22 @@ if __name__ == "__main__":
                             os.system("xrandr --output HDMI-0 --brightness 0.0")
                         elif mode is "OFF"
                             name = detect_face()
-                            if name in known_face_names:
+                            if (name in known_face_names) and (name is not "Unknown"):
                                 mode = "ON"
+                            else:
+                                slack_send.send_message("Unauthorized access attempt")
 
                 elif (float(ir) < 4.7) and (press is True):
                     press = False
                     if (time() - start_time <= 3):
                         print("Short Press", time() - start_time)
                         if mode is "ON":
-                            # Run slack thing
+                            slack_send.send_message(message="")
                             pass
 
+        except (SerialException):
+            wait = 0.25
         except (Warning, Exception):
-            pass
+            wait = 0.1
+        finally:
+            sleep(wait)
