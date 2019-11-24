@@ -17,6 +17,7 @@ import face_recognition
 import cv2
 import numpy as np
 import serial
+from time import strftime, sleep
 #############################################
 
 state = "SLEEP" # SLEEP, RECOG, ACTIVE_NORMAL, ACTIVE_AF
@@ -25,16 +26,28 @@ degree_sign = u'\N{DEGREE SIGN}'
 
 def serial_temp_reader():
     temperature = 0
-    while temperature < 5 or temperature > 50:
+    while temperature < 15 or temperature > 30:
         try:
             with serial.Serial('/dev/ttyUSB0', 115200, timeout=1) as ser:
-                temperature = float(ser.readline().decode("utf-8").split(',')[2])
-        except (Warning, Exception) as e:
+                temp, _, _ = ser.readline().decode("utf-8").split(',')
+                temperature = float(temp)
+                print(temperature)
+                
+        except ValueError:
             pass
+            
+        except (serial.SerialException, serial.SerialTimeoutException):
+            pass
+            
+        except (Warning, Exception) as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(e, exc_type, fname, exc_tb.tb_lineno)
+            
     return temperature
 
 def get_weather(lat, lng):
-   owm = pyowm.OWM(os.environ["PYOWM_API_KEY"])
+   owm = pyowm.OWM(environ["PYOWM_API_KEY"])
    observation = owm.weather_at_coords(lat, lng)
    w = observation.get_weather()
    temp = w.get_temperature('celsius')
@@ -46,7 +59,7 @@ def get_location():
     return g.lat, g.lng, g.address
 
 def get_mails():
-    filePath = "/home/team01/Mail/477grp1"
+    filePath = "/home/team1/Mail/mail"
     if not path.isfile(filePath):
         return ["NO MAILS FOUND"]
     else:
@@ -63,7 +76,7 @@ def get_mails():
         return sender_subject[-5:]
 
 def NewsFromBBC():
-    main_url = " https://newsapi.org/v1/articles?source=bbc-news&sortBy=top&apiKey=" + os.environ["NEWS_API_KEY"]
+    main_url = " https://newsapi.org/v1/articles?source=bbc-news&sortBy=top&apiKey=" + environ["NEWS_API_KEY"]
     open_bbc_page = requests.get(main_url).json()
     if 'articles' in open_bbc_page:
         articles = open_bbc_page["articles"]
@@ -79,7 +92,7 @@ def NewsFromBBC():
         return result
 
 def get_stonks():
-    intrinio_sdk.ApiClient().configuration.api_key['api_key'] = os.environ["INTRINIO_API_KEY"]
+    intrinio_sdk.ApiClient().configuration.api_key['api_key'] = environ["INTRINIO_API_KEY"]
     security_api = intrinio_sdk.SecurityApi()
     identifiers = ['AAPL', 'MSFT', 'GS', 'NKE']
     price_list = list()
@@ -100,7 +113,7 @@ def getQuote():
             i = random.randint(0, 250)
             quote = a[i]['en']
             author = a[i]['author']
-            if len(quote) < 130:
+            if len(quote) < 120:
                 return quote, author
 
     except (Warning, Exception) as e:
@@ -112,6 +125,7 @@ def getQuote():
 #############################################
 class Stonks(Frame):
     def __init__(self, master):
+        print("Stonks")
         Frame.__init__(self, master, background="BLACK")
 
         self.stonks = ""
@@ -125,23 +139,32 @@ class Stonks(Frame):
         self.update_stonks()
 
     def update_stonks(self):
-        x = get_stonks()
-        for i in range(len(x)):
-            temp = x[i]
-            temp1 = '* ' + temp
-            x[i] = temp1
-        string = '\n'.join(x)
-        img = Image.open(self.stonks_icon_location)
-        img = img.resize((45, 45), Image.ANTIALIAS)
-        img = img.convert('RGB')
-        pic = ImageTk.PhotoImage(img)
-        self.stonksIconLbl.config(image=pic, bg="black")
-        self.stonksIconLbl.image = pic
-        self.label_stonks.config(text=string)
-        self.after(600000, self.update_stonks)
+        try:
+            x = get_stonks()
+            for i in range(len(x)):
+                temp = x[i]
+                temp1 = '* ' + temp
+                x[i] = temp1
+            string = '\n'.join(x)
+            img = Image.open(self.stonks_icon_location)
+            img = img.resize((45, 45), Image.ANTIALIAS)
+            img = img.convert('RGB')
+            pic = ImageTk.PhotoImage(img)
+            self.stonksIconLbl.config(image=pic, bg="black")
+            self.stonksIconLbl.image = pic
+            self.label_stonks.config(text=string)
+
+        except (Warning, Exception) as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(e, exc_type, fname, exc_tb.tb_lineno)
+            
+        finally:
+            self.after(60000, self.update_stonks)
 
 class Mail(Frame):
     def __init__(self, master):
+        print("Mail")
         Frame.__init__(self, master, background="BLACK")
 
         self.mail = ""
@@ -155,23 +178,32 @@ class Mail(Frame):
         self.update_mail()
 
     def update_mail(self):
-        x = get_mails()
-        for i in range(len(x)):
-            temp = x[i]
-            temp1 = '* ' + temp
-            x[i] = temp1
-        string = '\n'.join(x)
-        img = Image.open(self.mail_icon_location)
-        img = img.resize((45, 45), Image.ANTIALIAS)
-        img = img.convert('RGB')
-        pic = ImageTk.PhotoImage(img)
-        self.mailIconLbl.config(image=pic, bg="black")
-        self.mailIconLbl.image = pic
-        self.label_mail.config(text=string)
-        self.after(600000, self.update_mail)
+        try:
+            x = get_mails()
+            for i in range(len(x)):
+                temp = x[i]
+                temp1 = '* ' + temp
+                x[i] = temp1
+            string = '\n'.join(x)
+            img = Image.open(self.mail_icon_location)
+            img = img.resize((45, 45), Image.ANTIALIAS)
+            img = img.convert('RGB')
+            pic = ImageTk.PhotoImage(img)
+            self.mailIconLbl.config(image=pic, bg="black")
+            self.mailIconLbl.image = pic
+            self.label_mail.config(text=string)
+
+        except (Warning, Exception) as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(e, exc_type, fname, exc_tb.tb_lineno)
+            
+        finally:
+            self.after(600000, self.update_mail)
 
 class News(Frame):
     def __init__(self, master):
+        print("News")
         Frame.__init__(self, master, background="BLACK")
 
         self.news = ""
@@ -185,23 +217,32 @@ class News(Frame):
         self.update_news()
 
     def update_news(self):
-        x = NewsFromBBC()
-        for i in range(len(x)):
-            temp = x[i]
-            temp1 = '* ' + temp
-            x[i] = temp1
-        string = '\n'.join(x)
-        img = Image.open(self.news_icon_location)
-        img = img.resize((45, 45), Image.ANTIALIAS)
-        img = img.convert('RGB')
-        pic = ImageTk.PhotoImage(img)
-        self.newsIconLbl.config(image=pic, bg="black")
-        self.newsIconLbl.image = pic
-        self.label_news.config(text=string)
-        self.after(600000, self.update_news)
-
+        try:
+            x = NewsFromBBC()
+            for i in range(len(x)):
+                temp = x[i]
+                temp1 = '* ' + temp
+                x[i] = temp1
+            string = '\n'.join(x)
+            img = Image.open(self.news_icon_location)
+            img = img.resize((45, 45), Image.ANTIALIAS)
+            img = img.convert('RGB')
+            pic = ImageTk.PhotoImage(img)
+            self.newsIconLbl.config(image=pic, bg="black")
+            self.newsIconLbl.image = pic
+            self.label_news.config(text=string)
+        
+        except (Warning, Exception) as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(e, exc_type, fname, exc_tb.tb_lineno)
+            
+        finally:
+            self.after(600000, self.update_news)
+            
 class Time_and_Day(Frame):
     def __init__(self, master):
+        print("Time_and_Day")
         Frame.__init__(self, master, background="BLACK")
         self.time1 = ""
         self.label_time = Label(self, font="Times 20", bg="BLACK", fg="WHITE")
@@ -218,22 +259,31 @@ class Time_and_Day(Frame):
         self.update_time()
 
     def update_time(self):
-        time2 = strftime("%I:%M:%S %p")
-        day2 =  strftime("%B %d, %Y")
-        day_of_the_week2 = strftime("%A")
-        if self.time1 != time2:
-            self.time1 = time2
-            self.label_time.config(text=time2)
-        if self.day1 != day2:
-            self.day1 = day2
-            self.label_day.config(text=day2)
-        if self.day_of_the_week1 != day_of_the_week2:
-            self.day_of_the_week1 = day_of_the_week2
-            self.label_day_of_the_week.config(text=day_of_the_week2)
-        self.after(200, self.update_time)
+        try:
+            time2 = strftime("%I:%M:%S %p")
+            day2 =  strftime("%B %d, %Y")
+            day_of_the_week2 = strftime("%A")
+            if self.time1 != time2:
+                self.time1 = time2
+                self.label_time.config(text=time2)
+            if self.day1 != day2:
+                self.day1 = day2
+                self.label_day.config(text=day2)
+            if self.day_of_the_week1 != day_of_the_week2:
+                self.day_of_the_week1 = day_of_the_week2
+                self.label_day_of_the_week.config(text=day_of_the_week2)
+        
+        except (Warning, Exception) as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(e, exc_type, fname, exc_tb.tb_lineno)
+            
+        finally:
+            self.after(200, self.update_time)
 
 class WeatherLocation(Frame):
     def __init__(self, master):
+        print("WeatherLocation")
         Frame.__init__(self, master, background="BLACK")
 
         # self.weatherIconLbl = Label(self, font="Times 20", bg="BLACK", fg="WHITE")
@@ -268,8 +318,8 @@ class WeatherLocation(Frame):
         # pic = ImageTk.PhotoImage(img)
         # self.weatherIconLbl.config(image=pic, bg="black")
         # self.weatherIconLbl.image = pic
-        self.label_temperature.config(text="Exterior: "str(self.temperature) + ' ' + degree_sign + 'C')
-        self.label_roomtemp.config(text="Room: "str(self.roomtemp) + ' ' + degree_sign + 'C')
+        self.label_temperature.config(text="Exterior: " + str(self.temperature) + ' ' + degree_sign + 'C')
+        self.label_roomtemp.config(text="Room: " + str(self.roomtemp) + ' ' + degree_sign + 'C')
         self.label_humidity.config(text='Humidity: ' + str(self.humidity) + '%')
         self.label_location.config(text=address)
         self.after(60000, self.update_weatherloc)
@@ -284,7 +334,7 @@ class Final:
         self.top.pack(side=TOP, fill=BOTH)
         self.bottom = Frame(self.root, bg="BLACK")
         self.bottom.pack(side=BOTTOM, fill=BOTH)
-
+        
         self.greeting = Label(self.root, text="Welcome, " + name, font="Times 43", bg="BLACK", fg="WHITE")
         self.greeting.pack(pady=200)
 
@@ -311,5 +361,6 @@ class Final:
         self.stonks.pack()
 
 if __name__ == "__main__":
+    print("Running mainloop...")
     start = Final()
     start.root.mainloop()
