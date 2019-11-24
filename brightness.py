@@ -6,6 +6,7 @@ import serial
 from time import time, sleep
 import slack_send
 import sys, os
+import signal
 #############################################
 
 stime = time()
@@ -52,6 +53,9 @@ face_locations = []
 face_encodings = []
 face_names = []
 print("Done in ", time() - stime)
+
+def signal_handler():
+    os.system("xrandr --output HDMI-0 --brightness 1.0 && killall python3")
 
 def detect_face():
     video_capture = cv2.VideoCapture(0)
@@ -103,9 +107,10 @@ def detect_face():
 
 
 if __name__ == "__main__":
-    print("ere")
+    os.system("rm -rf user && python3 dash.py &")
     longPress, press = False, False
     mode = "OFF" # OFF, ON
+    os.system("xrandr --output HDMI-0 --brightness 0.3")
     while True:
         try:
             wait = 0
@@ -123,7 +128,7 @@ if __name__ == "__main__":
                     longPress = False
                     start_time = time()
 
-                elif (press is True) and (longPress is False):
+                if (press is True) and (longPress is False):
                     if time() - start_time > 3:
                         longPress = True
                         print("Long Press", time() - start_time)
@@ -134,16 +139,19 @@ if __name__ == "__main__":
                             name = detect_face()
                             if (name in known_face_names) and (name is not "Unknown"):
                                 mode = "ON"
+                                filePath = "/home/team1/Py-UI/user"
+                                with open(filePath, "w") as user_file:
+                                    user_file.write(name)
                             else:
                                 pass
                                 # slack_send.send_message("Unauthorized access attempt")
 
-                elif (float(ir) < 4.7) and (press is True):
+                if (float(ir) > 4.7) and (press is True):
                     press = False
                     if (time() - start_time <= 3):
                         print("Short Press", time() - start_time)
                         if mode is "ON":
-                            slack_send.send_message(message="")
+                            slack_send.send_message(message=" ")
                             pass
 
         except (serial.SerialException, serial.SerialTimeoutException):
@@ -154,5 +162,6 @@ if __name__ == "__main__":
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(e, exc_type, fname, exc_tb.tb_lineno)
+            signal_handler()
         finally:
             sleep(wait)

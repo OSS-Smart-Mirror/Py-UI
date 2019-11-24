@@ -10,7 +10,7 @@ from intrinio_sdk.rest import ApiException
 import pyowm
 import geocoder
 import random
-from os import path, environ
+from os import path, environ, system
 from PIL import Image, ImageTk
 from subprocess import run
 import face_recognition
@@ -31,7 +31,6 @@ def serial_temp_reader():
             with serial.Serial('/dev/ttyUSB0', 115200, timeout=1) as ser:
                 temp, _, _ = ser.readline().decode("utf-8").split(',')
                 temperature = float(temp)
-                print(temperature)
                 
         except ValueError:
             pass
@@ -113,7 +112,7 @@ def getQuote():
             i = random.randint(0, 250)
             quote = a[i]['en']
             author = a[i]['author']
-            if len(quote) < 120:
+            if len(quote) < 110:
                 return quote, author
 
     except (Warning, Exception) as e:
@@ -125,14 +124,13 @@ def getQuote():
 #############################################
 class Stonks(Frame):
     def __init__(self, master):
-        print("Stonks")
         Frame.__init__(self, master, background="BLACK")
 
         self.stonks = ""
-        self.label_stonks = Label(self, font="Times 13", bg="BLACK", fg="WHITE")
+        self.label_stonks = Label(self, font="Times 15", bg="BLACK", fg="WHITE")
         self.label_stonks.pack(side=BOTTOM, anchor="n")
 
-        self.stonksIconLbl = Label(self, font="Times 13", bg="BLACK", fg="WHITE")
+        self.stonksIconLbl = Label(self, font="Times 15", bg="BLACK", fg="WHITE")
         self.stonksIconLbl.pack(side=BOTTOM, anchor="n")
         self.stonks_icon_location = './icons/Stocks.png'
 
@@ -164,14 +162,13 @@ class Stonks(Frame):
 
 class Mail(Frame):
     def __init__(self, master):
-        print("Mail")
         Frame.__init__(self, master, background="BLACK")
 
         self.mail = ""
-        self.label_mail = Label(self, font="Times 11", bg="BLACK", fg="WHITE")
+        self.label_mail = Label(self, font="Times 15", bg="BLACK", fg="WHITE")
         self.label_mail.pack(side=BOTTOM, anchor="n")
 
-        self.mailIconLbl = Label(self, font="Times 11", bg="BLACK", fg="WHITE")
+        self.mailIconLbl = Label(self, font="Times 15", bg="BLACK", fg="WHITE")
         self.mailIconLbl.pack(side=BOTTOM, anchor="n")
         self.mail_icon_location = './icons/email.png'
 
@@ -203,14 +200,13 @@ class Mail(Frame):
 
 class News(Frame):
     def __init__(self, master):
-        print("News")
         Frame.__init__(self, master, background="BLACK")
 
         self.news = ""
-        self.label_news = Label(self, font="Times 11", bg="BLACK", fg="WHITE")
+        self.label_news = Label(self, font="Times 15", bg="BLACK", fg="WHITE")
         self.label_news.pack(side=BOTTOM, anchor="n")
 
-        self.newsIconLbl = Label(self, font="Times 11", bg="BLACK", fg="WHITE")
+        self.newsIconLbl = Label(self, font="Times 15", bg="BLACK", fg="WHITE")
         self.newsIconLbl.pack(side=BOTTOM, anchor="n")
         self.news_icon_location = './icons/news.png'
 
@@ -242,18 +238,17 @@ class News(Frame):
             
 class Time_and_Day(Frame):
     def __init__(self, master):
-        print("Time_and_Day")
         Frame.__init__(self, master, background="BLACK")
         self.time1 = ""
-        self.label_time = Label(self, font="Times 20", bg="BLACK", fg="WHITE")
+        self.label_time = Label(self, font="Times 18", bg="BLACK", fg="WHITE")
         self.label_time.pack(side=TOP, anchor="e")
 
         self.day1 = ""
-        self.label_day = Label(self, font="Times 20", bg="BLACK", fg="WHITE")
+        self.label_day = Label(self, font="Times 18", bg="BLACK", fg="WHITE")
         self.label_day.pack(side=TOP, anchor="e")
 
         self.day_of_the_week1 = ""
-        self.label_day_of_the_week = Label(self, font="Times 20", bg="BLACK", fg="WHITE")
+        self.label_day_of_the_week = Label(self, font="Times 18", bg="BLACK", fg="WHITE")
         self.label_day_of_the_week.pack(side=TOP, anchor="e")
 
         self.update_time()
@@ -283,27 +278,26 @@ class Time_and_Day(Frame):
 
 class WeatherLocation(Frame):
     def __init__(self, master):
-        print("WeatherLocation")
         Frame.__init__(self, master, background="BLACK")
 
-        # self.weatherIconLbl = Label(self, font="Times 20", bg="BLACK", fg="WHITE")
+        # self.weatherIconLbl = Label(self, font="Times 18", bg="BLACK", fg="WHITE")
         # self.weatherIconLbl.pack(side=TOP, anchor="w")
         # self.icon_location = './icons/weatherIcon.png'
 
         self.temperature = ""
-        self.label_temperature = Label(self, font="Times 20", bg="BLACK", fg="WHITE")
+        self.label_temperature = Label(self, font="Times 18", bg="BLACK", fg="WHITE")
         self.label_temperature.pack(side=TOP, anchor="w")
 
         self.roomtemp = ""
-        self.label_roomtemp = Label(self, font="Times 20", bg="BLACK", fg="WHITE")
+        self.label_roomtemp = Label(self, font="Times 18", bg="BLACK", fg="WHITE")
         self.label_roomtemp.pack(side=TOP, anchor="w")
 
         self.humidity= ""
-        self.label_humidity = Label(self, font = "Times 20", bg="BLACK", fg="WHITE")
+        self.label_humidity = Label(self, font = "Times 18", bg="BLACK", fg="WHITE")
         self.label_humidity.pack(side=TOP, anchor="w")
 
         self.location = ""
-        self.label_location = Label(self, font="Times 20", bg="BLACK", fg="WHITE")
+        self.label_location = Label(self, font="Times 18", bg="BLACK", fg="WHITE")
         self.label_location.pack(side=TOP, anchor="w")
 
         self.update_weatherloc()
@@ -323,6 +317,47 @@ class WeatherLocation(Frame):
         self.label_humidity.config(text='Humidity: ' + str(self.humidity) + '%')
         self.label_location.config(text=address)
         self.after(60000, self.update_weatherloc)
+                
+class Greeting(Frame):
+    def __init__(self, master):
+        Frame.__init__(self, master, background="BLACK")
+        self.user = ""
+        self.greeting_label = Label(self, text=(2 * "\n" + "Welcome"), font="Times 43", bg="BLACK", fg="WHITE")
+        self.greeting_label.pack()
+        
+        self.quote_label =  Label(self, text=(35 * "\n"), font="Times 18", bg="BLACK", fg="WHITE")
+        self.quote_label.pack()
+        
+        self.author_label = Label(self, text=(5 * "\n"), font="Times 15", bg="BLACK", fg="WHITE")
+        self.author_label.pack()
+        
+        self.update_user()
+        self.update_quote_author()
+
+    def update_user(self):
+        try:
+            filePath = "/home/team1/Py-UI/user"
+            if not path.isfile(filePath):
+                if self.user is not "":
+                    self.user = ""
+                    self.greeting_label.config(text=2 * "\n" + "Welcome")
+                    self.update_quote_author()
+            else:
+                with open(filePath, "r") as user_file:
+                    user = user_file.read().strip()
+                    if self.user is not user:
+                        self.user = user
+                        self.greeting_label.config(text=2 * "\n" + "Welcome, " + self.user)
+        except (Warning, Exception) as e:
+            print(e)
+        finally:    
+            self.after(200, self.update_user)
+        
+    def update_quote_author(self):
+        quote, author = getQuote()
+        self.quote_label.config(text=35 * "\n" + quote)
+        self.author_label.config(text=author + "\n\n\n\n")
+        self.after(120000, self.update_quote_author)
 
 class Final:
     def __init__(self, name="User"):
@@ -335,9 +370,8 @@ class Final:
         self.bottom = Frame(self.root, bg="BLACK")
         self.bottom.pack(side=BOTTOM, fill=BOTH)
         
-        self.greeting = Label(self.root, text="Welcome, " + name, font="Times 43", bg="BLACK", fg="WHITE")
-        self.greeting.pack(pady=200)
-
+        self.greeting = Greeting(self.root)
+        
         self.time = Time_and_Day(self.top)
         self.time.pack(side=RIGHT, anchor=N)
 
@@ -352,15 +386,21 @@ class Final:
 
         self.stonks = Stonks(self.root)
 
-        quote, author = getQuote()
-
-        self.quote = Label(self.root, text=(30 * "\n" + quote), font="Times 14", bg="BLACK", fg="WHITE")
-        self.author = Label(self.root, text=(author + "\n\n\n\n"), font="Times 14", bg="BLACK", fg="WHITE")
-        self.quote.pack()
-        self.author.pack()
+        self.greeting.pack()
         self.stonks.pack()
 
 if __name__ == "__main__":
-    print("Running mainloop...")
-    start = Final()
-    start.root.mainloop()
+    try:
+        print("Running mainloop...")
+        start = Final()
+        start.root.mainloop()
+    except (Warning, Exception ) as e:
+        print(e)
+    finally:
+        system("xrandr --output HDMI-0 --brightness 1")
+        sys.exit(1)
+    
+    
+    
+    
+    
