@@ -7,8 +7,11 @@ from time import time, sleep
 import slack_send
 import sys, os
 import signal
+from PIL import Image, ImageFilter
+from random import choice
 #############################################
 
+os.system("rm -rf *.jpg *.png user")
 stime = time()
 degree_sign = u'\N{DEGREE SIGN}'
 rtvik_image_1 = face_recognition.load_image_file("known_users/Rtvik.jpg")
@@ -105,37 +108,30 @@ def detect_face():
     finally:
         video_capture.release()
 
-
 if __name__ == "__main__":
-    os.system("rm -rf user && python3 dash.py &")
     longPress, press = False, False
     mode = "OFF" # OFF, ON
-    os.system("xrandr --output HDMI-0 --brightness 0.3")
+    os.system("python3 dash.py &")
     while True:
         try:
-            wait = 0
             with serial.Serial('/dev/ttyUSB0', 115200, timeout=15) as ser:
                 temperature, ldr, ir = (ser.readline().decode("utf-8")).split(',')
-
+                
                 if mode is "ON":
-                    os.system("xrandr --output HDMI-0 --brightness " + str(0.8 + float(ldr) * 0.16))
+                    os.system("xrandr --output HDMI-0 --brightness " + str(0.6 + float(ldr) * 0.08))
 
                 if float(temperature) > 35 and float(temperature) < 50:
                     slack_send.send_message("Temperature exceeding normal levels: " + temperature + ' ' + degree_sign + 'C')
-
-                if (float(ir) < 4.7) and (press is False):
+                    
+                if float(ir) < 4.8 and press is False:
                     press = True
                     longPress = False
                     start_time = time()
 
-                if (press is True) and (longPress is False):
-                    if time() - start_time > 3:
-                        longPress = True
-                        print("Long Press", time() - start_time)
-                        if mode is "ON":
-                            mode = "OFF"
-                            os.system("xrandr --output HDMI-0 --brightness 0.3")
-                        elif mode is "OFF":
+                elif float(ir) < 4.8 and press is True:
+                    if time() - start_time > 3 and longPress is False:
+                        print("Long press", time() - start_time, mode)
+                        if mode is "OFF":
                             name = detect_face()
                             if (name in known_face_names) and (name is not "Unknown"):
                                 mode = "ON"
@@ -143,25 +139,49 @@ if __name__ == "__main__":
                                 with open(filePath, "w") as user_file:
                                     user_file.write(name)
                             else:
-                                pass
-                                # slack_send.send_message("Unauthorized access attempt")
-
-                if (float(ir) > 4.7) and (press is True):
+                                slack_send.send_message("Unauthorized access")
+                        elif mode is "ON":
+                            mode = "OFF"
+                            os.system("rm -rf *.jpg *.png user")
+                            os.system("xrandr --output HDMI-0 --brightness 0.5") 
+                        
+                        longPress = True
+                        
+                elif float(ir) > 4.8 and press is True:
+                    longPress = False
                     press = False
                     if (time() - start_time <= 3):
-                        print("Short Press", time() - start_time)
+                        print("Short Press", time() - start_time, mode)
                         if mode is "ON":
-                            slack_send.send_message(message=" ")
-                            pass
-
+                            option = choice([1, 2, 3, 4])
+                            cam = cv2.VideoCapture(0)
+                            s, img = cam.read()
+                            cam.release()
+                            cv2.imwrite("image.png", img)
+                            img1 = Image.open('image.png')
+                            if s:    # frame captured without any errors
+                                if option is 1: #GRAYSCALE
+                                    img1 = img1.convert('LA')
+                                elif option is 2: #SHARPEN
+                                    img1 = img1.filter(ImageFilter.SHARPEN)
+                                    img1 = img1.filter(ImageFilter.SHARPEN)
+                                elif option is 3: #EDGE ENHANCE
+                                    img1 = img1.filter(ImageFilter.EDGE_ENHANCE)
+                                    img1 = img1.filter(ImageFilter.EDGE_ENHANCE_MORE)
+                                else: #EMBOSS
+                                    img1 = img1.filter(ImageFilter.EMBOSS)
+                                    
+                                img1.save("final.png")
+                                slack_send.send_image(filepath="final.png")
+                                os.system("rm -rf *.png")
+                    
         except (serial.SerialException, serial.SerialTimeoutException):
-            wait = 0.1
+            pass
         except (ValueError):
-            wait = 0.1
+            pass
         except (Warning, Exception) as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(e, exc_type, fname, exc_tb.tb_lineno)
-            signal_handler()
         finally:
-            sleep(wait)
+            pass

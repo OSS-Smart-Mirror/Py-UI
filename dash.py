@@ -322,7 +322,7 @@ class Greeting(Frame):
     def __init__(self, master):
         Frame.__init__(self, master, background="BLACK")
         self.user = ""
-        self.greeting_label = Label(self, text=(2 * "\n" + "Welcome"), font="Times 43", bg="BLACK", fg="WHITE")
+        self.greeting_label = Label(self, text=(2 * "\n" + "Log in to continue"), font="Times 43", bg="BLACK", fg="WHITE")
         self.greeting_label.pack()
         
         self.quote_label =  Label(self, text=(35 * "\n"), font="Times 18", bg="BLACK", fg="WHITE")
@@ -338,10 +338,9 @@ class Greeting(Frame):
         try:
             filePath = "/home/team1/Py-UI/user"
             if not path.isfile(filePath):
-                if self.user is not "":
-                    self.user = ""
-                    self.greeting_label.config(text=2 * "\n" + "Welcome")
-                    self.update_quote_author()
+                self.user = ""
+                self.greeting_label.config(text=2 * "\n" + "Log in to continue")
+                self.update_quote_author()
             else:
                 with open(filePath, "r") as user_file:
                     user = user_file.read().strip()
@@ -357,7 +356,6 @@ class Greeting(Frame):
         quote, author = getQuote()
         self.quote_label.config(text=35 * "\n" + quote)
         self.author_label.config(text=author + "\n\n\n\n")
-        self.after(120000, self.update_quote_author)
 
 class Final:
     def __init__(self, name="User"):
@@ -388,6 +386,7 @@ class Final:
 
         self.greeting.pack()
         self.stonks.pack()
+        system("xrandr --output HDMI-0 --brightness 0.5")
 
 if __name__ == "__main__":
     try:
